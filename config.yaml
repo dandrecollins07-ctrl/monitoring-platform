@@ -1,0 +1,15 @@
+urls:
+  - name: GitHub API
+    url: https://api.github.com/zen
+    interval: 60
+    expected_status: 200
+
+  - name: Google
+    url: https://www.google.com
+    interval: 60
+    expected_status: 200
+
+  - name: My FastAPI App
+    url: http://localhost:8000
+    interval: 30
+    expected_status: 200
