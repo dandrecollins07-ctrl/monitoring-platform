@@ -2,6 +2,7 @@ import yaml
 import requests
 import time
 import psycopg2
+import schedule
 from datetime import datetime
 
 
@@ -35,7 +36,7 @@ def ping(name, url, expected_status, cur, conn):
     except requests.exceptions.Timeout:
         print(f"[{timestamp}] {name} — DOWN | Timed out after 10s")
         cur.execute("""INSERT INTO metrics (name, url, status_code, response_time_ms, checked_at)
-        VALUES (%s, %s, %s, %s, %s);""", (name, url, status_code, response_time_ms, timestamp))
+        VALUES (%s, %s, %s, %s, %s);""", (name, url, None, None, timestamp))
         conn.commit()
         return {
             "name": name,
@@ -49,8 +50,7 @@ def ping(name, url, expected_status, cur, conn):
     except requests.exceptions.ConnectionError:
         print(f"[{timestamp}] {name} — DOWN | Could not connect")
         cur.execute("""INSERT INTO metrics (name, url, status_code, response_time_ms, checked_at)
-        VALUES (%s, %s, %s, %s, %s);""", (name, url, status_code, response_time_ms, timestamp))
-        #triple quotes as it was not single lined
+        VALUES (%s, %s, %s, %s, %s);""", (name, url, None, None, timestamp))
         conn.commit()
         return {
             "name": name,
@@ -60,6 +60,17 @@ def ping(name, url, expected_status, cur, conn):
             "response_time_ms": None,
             "error": "ConnectionError"
         }
+    except Exception as e: #catch all function
+        print(f"[{timestamp}] {name} — DOWN | Unexpected error: {e}")
+        conn.rollback()
+        return {
+            "name": name,
+            "url": url,
+            "timestamp": timestamp,
+            "status_code": None,
+            "response_time_ms": None,
+            "error": str(e)
+        }
     
 
 
@@ -67,9 +78,8 @@ def ping(name, url, expected_status, cur, conn):
 def run_agent():
     config = load_config()
     urls = config["urls"]
-    interval = urls[0]["interval"]  # using first entry's interval for now
 
-    print(f"Agent started. Monitoring {len(urls)} URLs every {interval}s.\n")
+    print(f"Agent started. Monitoring {len(urls)} URLs.\n")
 
     #Connecting agent to SQL:
     conn = psycopg2.connect(
@@ -80,11 +90,12 @@ def run_agent():
     )
 
     cur = conn.cursor()
+    #running the daemon
+    for entry in urls:
+        schedule.every(entry["interval"]).seconds.do(ping, entry["name"], entry["url"], entry["expected_status"], cur, conn)
     while True:
-        for entry in urls:
-            ping(entry["name"], entry["url"], entry["expected_status"], cur, conn)
-        print("---")
-        time.sleep(interval)
+        schedule.run_pending()
+        time.sleep(1)
 
 
 if __name__ == "__main__":
