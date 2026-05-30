@@ -93,10 +93,54 @@ def run_agent():
     #running the daemon
     for entry in urls:
         schedule.every(entry["interval"]).seconds.do(ping, entry["name"], entry["url"], entry["expected_status"], cur, conn)
+    #Run the alert engine
+    schedule.every(60).seconds.do(alert_engine, cur, conn)
     while True:
         schedule.run_pending()
         time.sleep(1)
 
+    
+alerted_urls = dict() #Dictionary used to prevent alert fatigue
+def alert_engine(cur,conn):
+    #Connect agent to SQL:
+    config = load_config()
+    urls = config["urls"]
+    for entry in urls:
+        #Get the last 5 response times from database
+        cur.execute("""
+            SELECT response_time_ms from metrics
+            WHERE url = %s
+            ORDER BY checked_at DESC 
+            LIMIT 5 
+        """, (entry["url"],))
+        #Fetch all rows:
+        all_rows = cur.fetchall()
+        #Skip empty rows
+        if len(all_rows) == 0:
+            continue
+        #Extract numbers from tuples:
+        numbers = [row[0] for row in all_rows if row[0] is not None]
+        total = sum(numbers)
+        average = total / len(all_rows)
+        #Checking for status code from database
+        cur.execute("""
+            SELECT status_code from metrics
+            WHERE url = %s
+            ORDER BY checked_at DESC
+            LIMIT 1 
+        """, (entry["url"],))
+        one_row = cur.fetchone()
+        status_code = one_row[0]
+        #Issue check now
+        if average > config["threshold_ms"] or status_code != 200:
+            #Add to the discord webhook:
+            requests.post(config["webhook_url"], json={"content": f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {average} ms"})
+            if entry["url"] not in alerted_urls:
+                alerted_urls[entry["url"]] = True
+        #If no problem detected pop out the dictionary:
+        else:
+            if entry["url"] in alerted_urls:
+                alerted_urls.pop(entry["url"])
 
 if __name__ == "__main__":
     run_agent()
