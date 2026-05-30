@@ -134,8 +134,8 @@ def alert_engine(cur,conn):
         #Issue check now
         if average > config["threshold_ms"] or status_code != 200:
             #Add to the discord webhook:
-            requests.post(config["webhook_url"], json={"content": f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {average} ms"})
             if entry["url"] not in alerted_urls:
+                requests.post(config["webhook_url"], json={"content": f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {average} ms"})
                 alerted_urls[entry["url"]] = True
         #If no problem detected pop out the dictionary:
         else:
