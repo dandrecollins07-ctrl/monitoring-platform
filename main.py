@@ -56,3 +56,18 @@ def get_uptime(url: str):
     #now get the number of pings
     number_of_pings = cur.fetchone()[0]
     return (number_of_pings / total) * 100
+
+@app.get("/anomalies")
+def anomaly_detection():
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT host, COUNT(DISTINCT endpoint)
+        FROM server_logs
+        WHERE time >= NOW() - INTERVAL '10 minutes'
+        GROUP BY host
+        HAVING COUNT(DISTINCT endpoint) > 50
+    """)
+    total = cur.fetchall()
+    return total
+
+
