@@ -141,6 +141,25 @@ def alert_engine(cur,conn):
         else:
             if entry["url"] in alerted_urls:
                 alerted_urls.pop(entry["url"])
+        spike_detection(cur, conn, entry["url"], config["webhook_url"])
+
+#Spike detection
+spiked_urls = dict()
+def spike_detection(cur, conn, url, webhook_url):
+    cur.execute("""
+                SELECT COUNT(*)
+                FROM metrics
+                WHERE status_code = 404 AND url = %s
+                AND checked_at >= NOW() - INTERVAL '5 minutes'""", (url,))
+    one_row = cur.fetchone()
+    spike_count = one_row[0]
+    #Check for spike detection:
+    if spike_count >= 10 and url not in spiked_urls:
+        requests.post(webhook_url, json={"content": f"ALERT: {url} is currently having a 404 spike."})
+        spiked_urls[url] = True
+    elif spike_count < 10 and url in spiked_urls:
+            spiked_urls.pop(url)
 
 if __name__ == "__main__":
     run_agent()
+    
