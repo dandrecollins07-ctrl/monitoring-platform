@@ -1,8 +1,22 @@
 #need to import the fast API
 from fastapi import FastAPI
 import psycopg2
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError 
+from auth import (
+    password_verification,
+    token_auth,
+    load_config
+)
+from fastapi import Form
 
 app = FastAPI()
+
+#load the config:
+config = load_config()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #I need to define a route:
 #what is a route? A route is a function that runs when someone visits a URL
@@ -20,9 +34,40 @@ conn = psycopg2.connect(
 def first_test():
     return "Hello world"
 
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+    try:
+        payload = jwt.decode(
+            token,
+            config["secret_key"],
+            algorithms=[config["algorithm"]]
+        )
+
+        username = payload.get("sub")
+        role = payload.get("role")
+
+        if username is None or role is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+
+        return {
+            "username": username,
+            "role": role
+        }
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
 @app.get("/metrics")
 #We want the last 50 records, if no n is provided it will default to 50
-def get_metrics(n: int = 50): 
+def get_metrics( n: int = 50, current_user: dict = Depends(get_current_user)):
     #The goal of get metrics is to get the last n records
     cur = conn.cursor()
     cur.execute("""
@@ -36,7 +81,7 @@ def get_metrics(n: int = 50):
 
 
 @app.get("/uptime")
-def get_uptime(url: str):
+def get_uptime(url: str, current_user: dict = Depends(get_current_user)):
     #Need 2 queries, as we are using a percentage formula
     cur = conn.cursor()
     cur.execute("""
@@ -58,7 +103,7 @@ def get_uptime(url: str):
     return (number_of_pings / total) * 100
 
 @app.get("/anomalies")
-def anomaly_detection():
+def anomaly_detection(current_user: dict = Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute("""
         SELECT host, COUNT(DISTINCT endpoint)
@@ -71,3 +116,45 @@ def anomaly_detection():
     return total
 
 
+#Login here:
+@app.post("/login")
+def login(
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT username, hashed_password, role
+        FROM users
+        WHERE username = %s
+        """,
+        (username,)
+    )
+
+    user = cursor.fetchone()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+
+    stored_hash = user[1]  # password column
+
+    if not password_verification(password, stored_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+
+    token = token_auth(
+        user[0],  # username
+        user[2]   # role
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
