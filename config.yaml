@@ -1,5 +1,7 @@
 threshold_ms: 1000
 webhook_url: https://discord.com/api/webhooks/1510050246791528560/CRRTR2WcN1yocsatMqHmBFmxr_w0S6Ru6MiI_ERkGnEqiCRK7A0j_5m27EtFh6t9-ulj
+secret_key: Surprisecollege57*thisisa2026project,youcantguardme2007$$ 
+algorithm: HS256
 urls:
   - name: GitHub API
     url: https://api.github.com/zen

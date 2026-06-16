@@ -3,6 +3,7 @@ import psycopg2
 from passlib.context import CryptContext
 from jose import jwt
 import yaml
+import bcrypt; bcrypt.__about__ = bcrypt
 
 #Three functions: password_hashing, password_verification, token_auth
 
@@ -15,13 +16,13 @@ config = load_config()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def password_hashing(password):
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def password_verification(password, hashed_password):
-    return pwd_context.verify(password, hashed_password)
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def token_auth(user, role):
     secret = config["secret_key"]
     auth = config["algorithm"]
-    {"sub": user, "role": role}
-    return 
+    user_dict = {"sub": user, "role": role}
+    return jwt.encode(user_dict, secret, auth)

@@ -30,11 +30,6 @@ conn = psycopg2.connect(
     host="localhost",
     )
 
-@app.get("/")
-def first_test():
-    return "Hello world"
-
-
 def get_current_user(
     token: str = Depends(oauth2_scheme)
 ):
@@ -65,6 +60,18 @@ def get_current_user(
             detail="Invalid or expired token"
         )
 
+#RBAC:
+def require_admin(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != 'admin':
+        raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admins only"
+    )
+
+@app.get("/")
+def first_test():
+    return "Hello world"
+
 @app.get("/metrics")
 #We want the last 50 records, if no n is provided it will default to 50
 def get_metrics( n: int = 50, current_user: dict = Depends(get_current_user)):
@@ -78,7 +85,6 @@ def get_metrics( n: int = 50, current_user: dict = Depends(get_current_user)):
                     (n,))
     all_rows = cur.fetchall()
     return all_rows
-
 
 @app.get("/uptime")
 def get_uptime(url: str, current_user: dict = Depends(get_current_user)):
@@ -103,7 +109,7 @@ def get_uptime(url: str, current_user: dict = Depends(get_current_user)):
     return (number_of_pings / total) * 100
 
 @app.get("/anomalies")
-def anomaly_detection(current_user: dict = Depends(get_current_user)):
+def anomaly_detection(current_user: dict = Depends(get_current_user), _: dict = Depends(require_admin)):
     cur = conn.cursor()
     cur.execute("""
         SELECT host, COUNT(DISTINCT endpoint)
@@ -114,7 +120,6 @@ def anomaly_detection(current_user: dict = Depends(get_current_user)):
     """)
     total = cur.fetchall()
     return total
-
 
 #Login here:
 @app.post("/login")
