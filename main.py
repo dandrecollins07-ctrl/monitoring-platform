@@ -11,7 +11,17 @@ from auth import (
 )
 from fastapi import Form
 
+
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 #load the config:
 config = load_config()
@@ -74,7 +84,7 @@ def first_test():
 
 @app.get("/metrics")
 #We want the last 50 records, if no n is provided it will default to 50
-def get_metrics( n: int = 50, current_user: dict = Depends(get_current_user)):
+def get_metrics( n: int = 50): #add back after test:  current_user: dict = Depends(get_current_user)
     #The goal of get metrics is to get the last n records
     cur = conn.cursor()
     cur.execute("""
@@ -87,7 +97,7 @@ def get_metrics( n: int = 50, current_user: dict = Depends(get_current_user)):
     return all_rows
 
 @app.get("/uptime")
-def get_uptime(url: str, current_user: dict = Depends(get_current_user)):
+def get_uptime(url: str): #add back after test: current_user: dict = Depends(get_current_user)
     #Need 2 queries, as we are using a percentage formula
     cur = conn.cursor()
     cur.execute("""
