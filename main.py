@@ -14,7 +14,7 @@ from fastapi import Form
 
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
-
+from psycopg2.extras import RealDictCursor
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -29,8 +29,7 @@ config = load_config()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 #I need to define a route:
-#what is a route? A route is a function that runs when someone visits a URL
-
+#what is a route? A function that runs when someone visits a URL
 
 #Connecting agent to SQL:
 conn = psycopg2.connect(
@@ -83,9 +82,8 @@ def first_test():
     return "Hello world"
 
 @app.get("/metrics")
-#We want the last 50 records, if no n is provided it will default to 50
-def get_metrics( n: int = 50): #add back after test:  current_user: dict = Depends(get_current_user)
-    #The goal of get metrics is to get the last n records
+#We want the last 50 records as a flat list for the table
+def get_metrics(n: int = 50): #add back after test: current_user: dict = Depends(get_current_user)
     cur = conn.cursor()
     cur.execute("""
                 SELECT * from metrics
@@ -95,6 +93,24 @@ def get_metrics( n: int = 50): #add back after test:  current_user: dict = Depen
                     (n,))
     all_rows = cur.fetchall()
     return all_rows
+
+@app.get("/metrics/grouped")
+#Returns metrics grouped by URL as a dictionary — used by the Chart.js line chart
+def get_metrics_grouped(n: int = 50):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+                SELECT url, response_time_ms, checked_at FROM metrics
+                ORDER BY checked_at DESC
+                LIMIT %s
+                """,
+                    (n,))
+    all_rows = cur.fetchall()
+    metric_dict = dict()
+    for row in all_rows:
+        if row["url"] not in metric_dict:
+            metric_dict[row["url"]] = []
+        metric_dict[row["url"]].append({"response_time_ms": row["response_time_ms"], "checked_at": row["checked_at"]})
+    return metric_dict
 
 @app.get("/uptime")
 def get_uptime(url: str): #add back after test: current_user: dict = Depends(get_current_user)
@@ -108,7 +124,6 @@ def get_uptime(url: str): #add back after test: current_user: dict = Depends(get
     total = cur.fetchone()[0]
     if total == 0:
         return {"error": f"No data found for {url} in the last 24 hours"}
-    #Can use cur.execute() twice despite 2 queries
     cur.execute("""
                 SELECT COUNT(*) from metrics
                 WHERE url = %s AND checked_at >= NOW() - INTERVAL '24 hours' AND status_code = 200
@@ -156,7 +171,7 @@ def login(
             detail="Invalid credentials"
         )
 
-    stored_hash = user[1]  # password column
+    stored_hash = user[1]
 
     if not password_verification(password, stored_hash):
         raise HTTPException(

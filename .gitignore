@@ -2,3 +2,4 @@ venv/
 config.yaml
 access.log
 __pycache__/
+node_modules

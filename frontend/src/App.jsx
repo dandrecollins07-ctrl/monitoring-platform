@@ -38,7 +38,7 @@ export default function App() {
       <h2>Uptime Summary</h2>
       {urls.map((url, index) => (
         <p key={url}>
-          {url} — {uptimeData[index]}%
+          {url} — {typeof uptimeData[index] === 'number' ? `${uptimeData[index]}%` : 'No data'}
         </p>
       ))}
 
