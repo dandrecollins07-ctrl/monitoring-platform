@@ -11,6 +11,7 @@ from auth import (
 )
 from fastapi import Form
 from pydantic import BaseModel
+import yaml
 
 
 app = FastAPI()
@@ -170,10 +171,20 @@ def add_url(url_data: AdminPanel):
         "expected_status": expected_status,
         "interval": interval
     })
+    #Read the YAML file
     with open("config.yaml", "w") as f:
-    yaml.dump(config, f)
+        yaml.dump(config, f)
     return {"success": True}
 
+
+#Delete request:
+@app.delete("/urls")
+def remove_url(url: str):
+    config = load_config()
+    config["urls"] = [entry for entry in config["urls"] if entry["url"] != url]
+    with open("config.yaml", "w") as f:
+        yaml.dump(config, f)
+    return {"success": True}
 #Login here:
 @app.post("/login")
 def login(
