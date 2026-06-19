@@ -10,6 +10,7 @@ from auth import (
     load_config
 )
 from fastapi import Form
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -145,6 +146,33 @@ def anomaly_detection(current_user: dict = Depends(get_current_user), _: dict = 
     """)
     total = cur.fetchall()
     return total
+
+
+#Admin panel:
+class AdminPanel(BaseModel):
+    name: str
+    url: str
+    expected_status: int
+    interval: int
+
+#Post request example:
+@app.post("/urls")
+def add_url(url_data: AdminPanel):
+    url_name = url_data.name
+    original_url = url_data.url
+    expected_status = url_data.expected_status
+    interval = url_data.interval
+    config = load_config()
+    urls = config["urls"]
+    urls.append({
+        "name": url_name,
+        "url": original_url,
+        "expected_status": expected_status,
+        "interval": interval
+    })
+    with open("config.yaml", "w") as f:
+    yaml.dump(config, f)
+    return {"success": True}
 
 #Login here:
 @app.post("/login")
