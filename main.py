@@ -238,7 +238,7 @@ def login(
 @app.get("/alerts")
 def get_alerts():
     cur = conn.cursor(cursor_factory=RealDictCursor)
-
+    conn.rollback()
     cur.execute("""
         SELECT
             id,
