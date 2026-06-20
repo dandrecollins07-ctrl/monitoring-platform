@@ -185,6 +185,13 @@ def remove_url(url: str):
     with open("config.yaml", "w") as f:
         yaml.dump(config, f)
     return {"success": True}
+
+#Get urls:
+@app.get("/urls")
+def get_url():
+    config=load_config()
+    return config["urls"]
+
 #Login here:
 @app.post("/login")
 def login(
@@ -227,3 +234,22 @@ def login(
         "access_token": token,
         "token_type": "bearer"
     }
+
+@app.get("/alerts")
+def get_alerts():
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        SELECT
+            id,
+            url,
+            status_code,
+            avg_response_ms,
+            message,
+            triggered_at
+        FROM alerts
+        ORDER BY triggered_at DESC
+    """)
+
+    rows = cur.fetchall()
+    return rows

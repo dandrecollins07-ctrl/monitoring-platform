@@ -1,19 +1,21 @@
-threshold_ms: 1000
-webhook_url: https://discord.com/api/webhooks/1510050246791528560/CRRTR2WcN1yocsatMqHmBFmxr_w0S6Ru6MiI_ERkGnEqiCRK7A0j_5m27EtFh6t9-ulj
-secret_key: Surprisecollege57*thisisa2026project,youcantguardme2007$$ 
 algorithm: HS256
+secret_key: Surprisecollege57*thisisa2026project,youcantguardme2007$$
+threshold_ms: 1000
 urls:
-  - name: GitHub API
-    url: https://api.github.com/zen
-    interval: 60
-    expected_status: 200
-
-  - name: Google
-    url: https://www.google.com
-    interval: 60
-    expected_status: 200
-
-  - name: My FastAPI App
-    url: http://localhost:8000
-    interval: 30
-    expected_status: 200
+- expected_status: 200
+  interval: 60
+  name: GitHub API
+  url: https://api.github.com/zen
+- expected_status: 200
+  interval: 60
+  name: Google
+  url: https://www.google.com
+- expected_status: 200
+  interval: 30
+  name: My FastAPI App
+  url: http://localhost:8000
+- expected_status: 200
+  interval: 60
+  name: OpenAI
+  url: https://www.openai.com
+webhook_url: https://discord.com/api/webhooks/1510050246791528560/CRRTR2WcN1yocsatMqHmBFmxr_w0S6Ru6MiI_ERkGnEqiCRK7A0j_5m27EtFh6t9-ulj

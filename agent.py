@@ -133,9 +133,28 @@ def alert_engine(cur,conn):
         status_code = one_row[0]
         #Issue check now
         if average > config["threshold_ms"] or status_code != 200:
-            #Add to the discord webhook:
+        #Add to the discord webhook:
             if entry["url"] not in alerted_urls:
-                requests.post(config["webhook_url"], json={"content": f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {average} ms"})
+                message = f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {average} ms"
+
+                requests.post(
+                    config["webhook_url"],
+                    json={"content": message}
+                )
+
+                cur.execute("""
+                    INSERT INTO alerts
+                    (url, status_code, avg_response_ms, message, triggered_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                """, (
+                    entry["url"],
+                    status_code,
+                    average,
+                    message
+                ))
+
+                conn.commit()
+
                 alerted_urls[entry["url"]] = True
         #If no problem detected pop out the dictionary:
         else:
@@ -155,7 +174,26 @@ def spike_detection(cur, conn, url, webhook_url):
     spike_count = one_row[0]
     #Check for spike detection:
     if spike_count >= 10 and url not in spiked_urls:
-        requests.post(webhook_url, json={"content": f"ALERT: {url} is currently having a 404 spike."})
+        message = f"ALERT: {url} is currently having a 404 spike."
+
+        requests.post(
+            webhook_url,
+            json={"content": message}
+        )
+
+        cur.execute("""
+            INSERT INTO alerts
+            (url, status_code, avg_response_ms, message, triggered_at)
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (
+            url,
+            404,
+            None,
+            message
+        ))
+
+        conn.commit()
+
         spiked_urls[url] = True
     elif spike_count < 10 and url in spiked_urls:
             spiked_urls.pop(url)
