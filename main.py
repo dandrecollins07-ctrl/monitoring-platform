@@ -253,3 +253,110 @@ def get_alerts():
 
     rows = cur.fetchall()
     return rows
+
+#Get incidents:
+@app.get("/incidents")
+def get_incidents():
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT
+            id,
+            title,
+            description,
+            severity,
+            status,
+            created_at
+        FROM incidents
+        ORDER BY created_at DESC
+    """)
+    all_rows = cur.fetchall()
+    return all_rows
+
+#Post incidents:
+class IncidentCreate(BaseModel):
+    title: str
+    description: str
+    severity: str
+    status: str
+
+class IncidentUpdate(BaseModel):
+    title: str
+    description: str
+    severity: str
+    status: str
+
+
+@app.post("/incidents")
+def create_incident(incident: IncidentCreate):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        INSERT INTO incidents (
+            title,
+            description,
+            severity,
+            status
+        )
+        VALUES (%s, %s, %s, %s)
+        RETURNING
+            id,
+            title,
+            description,
+            severity,
+            status,
+            created_at
+    """, (
+        incident.title,
+        incident.description,
+        incident.severity,
+        incident.status
+    ))
+    new_row = cur.fetchone()
+    conn.commit()
+    return new_row
+
+@app.patch("/incidents/{id}")
+def update_incident(id: int, incident: IncidentUpdate):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        UPDATE incidents
+        SET
+            title = %s,
+            description = %s,
+            severity = %s,
+            status = %s
+        WHERE id = %s
+        RETURNING
+            id,
+            title,
+            description,
+            severity,
+            status,
+            created_at
+    """, (
+        incident.title,
+        incident.description,
+        incident.severity,
+        incident.status,
+        id
+    ))
+    updated_row = cur.fetchone()
+    conn.commit()
+    return updated_row
+
+@app.delete("/incidents/{id}")
+def delete_incident(id: int):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        DELETE FROM incidents
+        WHERE id = %s
+        RETURNING
+            id,
+            title,
+            description,
+            severity,
+            status,
+            created_at
+    """, (id,))
+    deleted_row = cur.fetchone()
+    conn.commit()
+    return deleted_row
