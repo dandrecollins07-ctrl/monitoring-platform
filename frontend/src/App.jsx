@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import AdminPanel from "./AdminPanel"
 import AlertHistory from "./AlertHistory"
+import IncidentPanel from "./IncidentPanel"
 
 export default function App() {
   const [metrics, setMetrics] = useState([])
@@ -70,6 +71,7 @@ export default function App() {
       </table>
       <AdminPanel/>
       <AlertHistory/>
+      <IncidentPanel/>
     </div>
   )
 }
