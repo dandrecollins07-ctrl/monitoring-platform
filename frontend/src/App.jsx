@@ -11,14 +11,14 @@ export default function App() {
 
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch("http://localhost:8000/metrics")
+      const res = await fetch("/api/metrics")
       const data = await res.json()
 
       const uniqueURLs = [...new Set(data.map(r => r[2]))]
 
       const uptime = await Promise.all(
         uniqueURLs.map(url =>
-          fetch(`http://localhost:8000/uptime?url=${url}`)
+          fetch(`/api/uptime?url=${url}`)
             .then(r => r.json())
         )
       )

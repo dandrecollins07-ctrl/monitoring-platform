@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg2.extras import RealDictCursor
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -38,7 +38,7 @@ conn = psycopg2.connect(
     dbname="monitoring",
     user="postgres",
     password="postgres", #update before deploying
-    host="localhost",
+    host="db",
     )
 
 def get_current_user(
@@ -86,6 +86,7 @@ def first_test():
 @app.get("/metrics")
 #We want the last 50 records as a flat list for the table
 def get_metrics(n: int = 50): #add back after test: current_user: dict = Depends(get_current_user)
+    cur = conn.rollback()
     cur = conn.cursor()
     cur.execute("""
                 SELECT * from metrics

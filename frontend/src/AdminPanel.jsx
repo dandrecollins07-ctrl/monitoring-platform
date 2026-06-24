@@ -9,7 +9,7 @@ export default function AdminPanel() {
 
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch("http://localhost:8000/urls");
+      const res = await fetch("/api/urls");
       const data = await res.json();
 
       setUrls(data);
@@ -19,26 +19,26 @@ export default function AdminPanel() {
   }, []);
 
   async function handleSubmit() {
-    await fetch("http://localhost:8000/urls", {
+    await fetch("/api/urls", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, url, expected_status, interval }),
     });
 
-    const refreshed = await fetch("http://localhost:8000/urls");
+    const refreshed = await fetch("/api/urls");
     const data = await refreshed.json();
     setUrls(data);
   }
 
   async function handleDelete(urlToDelete) {
     await fetch(
-      `http://localhost:8000/urls?url=${encodeURIComponent(urlToDelete)}`,
+      `/api/urls?url=${encodeURIComponent(urlToDelete)}`,
       {
         method: "DELETE",
       }
     );
 
-    const refreshed = await fetch("http://localhost:8000/urls");
+    const refreshed = await fetch("/api/urls");
     const data = await refreshed.json();
     setUrls(data);
   }

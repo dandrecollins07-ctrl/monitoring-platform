@@ -5,7 +5,7 @@ function AlertHistory() {
 
   useEffect(() => {
     async function fetchAlerts() {
-      const res = await fetch("http://localhost:8000/alerts");
+      const res = await fetch("/api/alerts");
       const data = await res.json();
       setAlerts(data);
     }

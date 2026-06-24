@@ -10,7 +10,7 @@ export default function IncidentPanel() {
 
 useEffect(() => {
     async function fetchData() {
-        const res = await fetch("http://localhost:8000/incidents");
+        const res = await fetch("/api/incidents");
         const data= await res.json();
 
         setIncidents(data);
@@ -19,25 +19,25 @@ useEffect(() => {
 }, []);
 
 async function handleSubmit() {
-    await fetch("http://localhost:8000/incidents", {
+    await fetch("/api/incidents", {
         method: "POST",
         headers:{ "Content-Type": "application/json" },
         body: JSON.stringify({title, description, severity, status}),
     });
 
-    const refreshed = await fetch("http://localhost:8000/incidents");
+    const refreshed = await fetch("/api/incidents");
     const data = await refreshed.json();
     setIncidents(data);
 }
 
 async function handleStatusUpdate(id, newStatus) {
-    await fetch(`http://localhost:8000/incidents/${id}`, {
+    await fetch(`/api/incidents/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
     });
 
-    const refreshed = await fetch("http://localhost:8000/incidents");
+    const refreshed = await fetch("/api/incidents");
     const data = await refreshed.json();
     setIncidents(data);
 }
