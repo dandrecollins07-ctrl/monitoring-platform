@@ -2,4 +2,6 @@ venv/
 config.yaml
 access.log
 __pycache__/
-node_modules
+node_modulesaws/
+awscliv2.zip
+node_modules/

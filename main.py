@@ -30,16 +30,13 @@ config = load_config()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-#I need to define a route:
-#what is a route? A function that runs when someone visits a URL
-
 #Connecting agent to SQL:
 conn = psycopg2.connect(
-    dbname="monitoring",
-    user="postgres",
-    password="postgres", #update before deploying
+    dbname=config["db_name"],
+    user=config["db_user"],
+    password=config["db_password"],
     host="db",
-    )
+)
 
 def get_current_user(
     token: str = Depends(oauth2_scheme)
@@ -85,8 +82,8 @@ def first_test():
 
 @app.get("/metrics")
 #We want the last 50 records as a flat list for the table
-def get_metrics(n: int = 50): #add back after test: current_user: dict = Depends(get_current_user)
-    cur = conn.rollback()
+def get_metrics(n: int = 50, current_user: dict = Depends(get_current_user)):
+    conn.rollback()
     cur = conn.cursor()
     cur.execute("""
                 SELECT * from metrics
@@ -116,7 +113,7 @@ def get_metrics_grouped(n: int = 50):
     return metric_dict
 
 @app.get("/uptime")
-def get_uptime(url: str): #add back after test: current_user: dict = Depends(get_current_user)
+def get_uptime(url: str, current_user: dict = Depends(get_current_user)):
     #Need 2 queries, as we are using a percentage formula
     cur = conn.cursor()
     cur.execute("""
@@ -199,6 +196,7 @@ def login(
     username: str = Form(...),
     password: str = Form(...)
 ):
+    conn.rollback()
     cursor = conn.cursor()
 
     cursor.execute(

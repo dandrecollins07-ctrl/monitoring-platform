@@ -1,5 +1,8 @@
+db_name: monitoring
+db_user: postgres
+db_password: postgres
 algorithm: HS256
-secret_key: Surprisecollege57*thisisa2026project,youcantguardme2007$$
+secret_key: Surprisecollege57*thisisa2026project,youcantguardme2007$$.hireme
 threshold_ms: 1000
 urls:
 - expected_status: 200
