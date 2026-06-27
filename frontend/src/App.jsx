@@ -48,14 +48,14 @@ function Sidebar({ onLogout, isDemo }) {
   )
 }
 
-function AppShell({ token, isDemo, onLogout }) {
+function AppShell({ token, role, isDemo, onLogout }) {
   return (
     <div className="app-shell">
       <Sidebar onLogout={onLogout} isDemo={isDemo} />
       <main className="main-content">
         <Routes>
           <Route path="/dashboard" element={<Dashboard token={token} />} />
-          <Route path="/monitors"  element={<Monitors token={token} />} />
+          <Route path="/monitors"  element={<Monitors token={token} role={role} />} />
           <Route path="/incidents" element={<Incidents token={token} />} />
           <Route path="/alerts"    element={<Alerts token={token} />} />
           <Route path="/settings"  element={<Settings token={token} />} />
@@ -67,30 +67,36 @@ function AppShell({ token, isDemo, onLogout }) {
 }
 
 export default function App() {
-  const [token,   setToken]   = useState(localStorage.getItem("token"))
-  const [isDemo,  setIsDemo]  = useState(localStorage.getItem("isDemo") === "true")
+  const [token,     setToken]     = useState(localStorage.getItem("token"))
+  const [isDemo,    setIsDemo]    = useState(localStorage.getItem("isDemo") === "true")
+  const [role,      setRole]      = useState(localStorage.getItem("role"))
   const [showLogin, setShowLogin] = useState(false)
 
   function handleLogin(accessToken, demo = false) {
+    const payload = JSON.parse(atob(accessToken.split(".")[1]))
     localStorage.setItem("token", accessToken)
     localStorage.setItem("isDemo", demo)
+    localStorage.setItem("role", payload.role)
     setToken(accessToken)
     setIsDemo(demo)
+    setRole(payload.role)
     setShowLogin(false)
   }
 
   function handleLogout() {
     localStorage.removeItem("token")
     localStorage.removeItem("isDemo")
+    localStorage.removeItem("role")
     setToken(null)
     setIsDemo(false)
+    setRole(null)
     setShowLogin(false)
   }
 
   return (
     <BrowserRouter>
       {token
-        ? <AppShell token={token} isDemo={isDemo} onLogout={handleLogout} />
+        ? <AppShell token={token} role={role} isDemo={isDemo} onLogout={handleLogout} />
         : showLogin
           ? <Login onLogin={handleLogin} onBack={() => setShowLogin(false)} />
           : <Landing onEnter={() => setShowLogin(true)} />
