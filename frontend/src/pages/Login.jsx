@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onBack }) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError]       = useState("")
@@ -19,9 +19,7 @@ export default function Login({ onLogin }) {
       onLogin(data.access_token, false)
     } catch {
       setError("Could not reach the server. Try again.")
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   async function handleDemo() {
@@ -36,9 +34,7 @@ export default function Login({ onLogin }) {
       onLogin(data.access_token, true)
     } catch {
       setError("Could not reach the server.")
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   function handleKey(e) { if (e.key === "Enter") handleSubmit() }
@@ -79,7 +75,7 @@ export default function Login({ onLogin }) {
             />
           </div>
 
-          <button className="btn btn-primary" style={{width:"100%", justifyContent:"center"}} onClick={handleSubmit} disabled={loading}>
+          <button className="btn btn-primary" style={{width:"100%",justifyContent:"center"}} onClick={handleSubmit} disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </button>
 
@@ -88,6 +84,12 @@ export default function Login({ onLogin }) {
           <button className="btn-demo" onClick={handleDemo} disabled={loading}>
             Continue as Guest (Demo mode)
           </button>
+
+          {onBack && (
+            <button className="btn btn-ghost" style={{width:"100%",justifyContent:"center",marginTop:"4px"}} onClick={onBack}>
+              ← Back to overview
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { BrowserRouter, Routes, Route, Navigate, NavLink, useNavigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, NavLink } from "react-router-dom"
 import Dashboard from "./pages/Dashboard"
 import Monitors from "./pages/Monitors"
 import Incidents from "./pages/Incidents"
 import Alerts from "./pages/Alerts"
 import Settings from "./pages/Settings"
 import Login from "./pages/Login"
+import Landing from "./pages/Landing"
 import "./index.css"
 
 function Sidebar({ onLogout, isDemo }) {
@@ -66,14 +67,16 @@ function AppShell({ token, isDemo, onLogout }) {
 }
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"))
-  const [isDemo, setIsDemo] = useState(localStorage.getItem("isDemo") === "true")
+  const [token,   setToken]   = useState(localStorage.getItem("token"))
+  const [isDemo,  setIsDemo]  = useState(localStorage.getItem("isDemo") === "true")
+  const [showLogin, setShowLogin] = useState(false)
 
   function handleLogin(accessToken, demo = false) {
     localStorage.setItem("token", accessToken)
     localStorage.setItem("isDemo", demo)
     setToken(accessToken)
     setIsDemo(demo)
+    setShowLogin(false)
   }
 
   function handleLogout() {
@@ -81,13 +84,16 @@ export default function App() {
     localStorage.removeItem("isDemo")
     setToken(null)
     setIsDemo(false)
+    setShowLogin(false)
   }
 
   return (
     <BrowserRouter>
-      {!token
-        ? <Login onLogin={handleLogin} />
-        : <AppShell token={token} isDemo={isDemo} onLogout={handleLogout} />
+      {token
+        ? <AppShell token={token} isDemo={isDemo} onLogout={handleLogout} />
+        : showLogin
+          ? <Login onLogin={handleLogin} onBack={() => setShowLogin(false)} />
+          : <Landing onEnter={() => setShowLogin(true)} />
       }
     </BrowserRouter>
   )
