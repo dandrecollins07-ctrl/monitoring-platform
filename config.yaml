@@ -17,4 +17,16 @@ urls:
   interval: 60
   name: OpenAI
   url: https://www.openai.com
+  - expected_status: 200
+  interval: 60
+  name: HTTPBin
+  url: https://httpbin.org/get
+- expected_status: 200
+  interval: 60
+  name: JSONPlaceholder
+  url: https://jsonplaceholder.typicode.com/posts/1
+- expected_status: 200
+  interval: 60
+  name: Cloudflare
+  url: https://cloudflare.com
 webhook_url: https://discord.com/api/webhooks/1510050246791528560/CRRTR2WcN1yocsatMqHmBFmxr_w0S6Ru6MiI_ERkGnEqiCRK7A0j_5m27EtFh6t9-ulj

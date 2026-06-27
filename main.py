@@ -154,41 +154,35 @@ class AdminPanel(BaseModel):
     expected_status: int
     interval: int
 
-#Post request example:
 @app.post("/urls")
-def add_url(url_data: AdminPanel):
-    url_name = url_data.name
-    original_url = url_data.url
-    expected_status = url_data.expected_status
-    interval = url_data.interval
-    config = load_config()
-    urls = config["urls"]
-    urls.append({
-        "name": url_name,
-        "url": original_url,
-        "expected_status": expected_status,
-        "interval": interval
-    })
-    #Read the YAML file
-    with open("config.yaml", "w") as f:
-        yaml.dump(config, f)
-    return {"success": True}
+def add_url(url_data: AdminPanel, current_user: dict = Depends(require_admin)):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cur.execute("""
+            INSERT INTO urls (name, url, expected_status, interval)
+            VALUES (%s, %s, %s, %s)
+            RETURNING *
+        """, (url_data.name, url_data.url, url_data.expected_status, url_data.interval))
+        new_row = cur.fetchone()
+        conn.commit()
+        return new_row
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
-
-#Delete request:
 @app.delete("/urls")
-def remove_url(url: str):
-    config = load_config()
-    config["urls"] = [entry for entry in config["urls"] if entry["url"] != url]
-    with open("config.yaml", "w") as f:
-        yaml.dump(config, f)
+def remove_url(url: str, current_user: dict = Depends(require_admin)):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("DELETE FROM urls WHERE url = %s RETURNING *", (url,))
+    deleted = cur.fetchone()
+    conn.commit()
     return {"success": True}
 
-#Get urls:
 @app.get("/urls")
-def get_url():
-    config=load_config()
-    return config["urls"]
+def get_url(current_user: dict = Depends(get_current_user)):
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM urls ORDER BY id ASC")
+    return cur.fetchall()
 
 #Login here:
 @app.post("/login")

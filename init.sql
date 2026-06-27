@@ -47,3 +47,10 @@ CREATE TABLE IF NOT EXISTS server_logs (
     byte int NULL
 )
 
+CREATE TABLE IF NOT EXISTS urls (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(255) UNIQUE NOT NULL,
+    expected_status INT DEFAULT 200,
+    interval INT DEFAULT 60
+);
