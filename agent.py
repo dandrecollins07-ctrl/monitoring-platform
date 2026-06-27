@@ -86,7 +86,7 @@ def run_agent():
         dbname="monitoring",
         user="postgres",
         password="postgres", #update before deploying
-        host="localhost",
+        host="db",
     )
 
     cur = conn.cursor()
