@@ -88,7 +88,7 @@ export default function Dashboard({ token }) {
   const avgUptime   = uptimeData.length ? (uptimeData.reduce((a,b) => a + (typeof b === 'number' ? b : 0), 0) / uptimeData.length).toFixed(1) : "—"
   const avgResponse = metrics.length ? (metrics.reduce((a,r) => a + (r[4] || 0), 0) / metrics.length).toFixed(0) : "—"
   const openIncidents = incidents.filter(i => i.status !== "resolved").length
-  const lastCheck   = metrics.length ? metrics[metrics.length-1]?.[5] : null
+  const lastCheck = metrics.length ? metrics[0]?.[5] : null
 
   return (
     <div>
