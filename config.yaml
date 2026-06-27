@@ -14,10 +14,6 @@ urls:
   name: Google
   url: https://www.google.com
 - expected_status: 200
-  interval: 30
-  name: My FastAPI App
-  url: http://backend:8000
-- expected_status: 200
   interval: 60
   name: OpenAI
   url: https://www.openai.com
