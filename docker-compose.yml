@@ -16,18 +16,30 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build: .
-    restart: on-failure
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/monitoring
 
+  agent:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/monitoring
+    command: python agent.py
+
   frontend:
     build: ./frontend
+    restart: unless-stopped
     depends_on:
       - backend
 
@@ -35,5 +47,6 @@ services:
     image: caddy:2-alpine
     ports:
       - "80:80"
+    restart: unless-stopped
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile

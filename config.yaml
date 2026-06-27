@@ -16,7 +16,7 @@ urls:
 - expected_status: 200
   interval: 30
   name: My FastAPI App
-  url: http://localhost:8000
+  url: http://backend:8000
 - expected_status: 200
   interval: 60
   name: OpenAI
