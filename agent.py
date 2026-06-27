@@ -3,7 +3,7 @@ import requests
 import time
 import psycopg2
 import schedule
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def load_config(path="config.yaml"):
@@ -12,13 +12,13 @@ def load_config(path="config.yaml"):
 
 
 def ping(name, url, expected_status, cur, conn):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     try:
         response = requests.get(url, timeout=10)
         status_code = response.status_code
         response_time_ms = round(response.elapsed.total_seconds() * 1000, 2)
         is_up = status_code == expected_status
-
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         status_label = "UP" if is_up else "DEGRADED"
         print(f"[{timestamp}] {name} — {status_label} | {status_code} | {response_time_ms}ms")
         cur.execute("""INSERT INTO metrics (name, url, status_code, response_time_ms, checked_at)
