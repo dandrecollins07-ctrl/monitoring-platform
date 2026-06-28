@@ -5,3 +5,4 @@ __pycache__/
 node_modulesaws/
 awscliv2.zip
 node_modules/
+.env

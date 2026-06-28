@@ -1,18 +1,16 @@
-import yaml
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import requests
 import time
 import psycopg2
 import schedule
 from datetime import datetime, timezone
 
-
-def load_config(path="config.yaml"):
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
-
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+THRESHOLD_MS = int(os.getenv("THRESHOLD_MS", 2000))
 
 def ping(name, url, expected_status, cur, conn):
-    
     try:
         response = requests.get(url, timeout=10)
         status_code = response.status_code
@@ -34,6 +32,7 @@ def ping(name, url, expected_status, cur, conn):
         }
 
     except requests.exceptions.Timeout:
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {name} — DOWN | Timed out after 10s")
         cur.execute("""INSERT INTO metrics (name, url, status_code, response_time_ms, checked_at)
         VALUES (%s, %s, %s, %s, %s);""", (name, url, None, None, timestamp))
@@ -48,6 +47,7 @@ def ping(name, url, expected_status, cur, conn):
         }
 
     except requests.exceptions.ConnectionError:
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {name} — DOWN | Could not connect")
         cur.execute("""INSERT INTO metrics (name, url, status_code, response_time_ms, checked_at)
         VALUES (%s, %s, %s, %s, %s);""", (name, url, None, None, timestamp))
@@ -61,6 +61,7 @@ def ping(name, url, expected_status, cur, conn):
             "error": "ConnectionError"
         }
     except Exception as e:
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {name} — DOWN | Unexpected error: {e}")
         conn.rollback()
         return {
@@ -81,12 +82,10 @@ def get_urls_from_db(conn):
 
 
 def run_agent():
-    config = load_config()
-
     conn = psycopg2.connect(
-        dbname=config["db_name"],
-        user=config["db_user"],
-        password=config["db_password"],
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
         host="db",
     )
 
@@ -104,7 +103,6 @@ def run_agent():
 
 alerted_urls = dict()
 def alert_engine(cur, conn):
-    config = load_config()
     urls = get_urls_from_db(conn)
     for entry in urls:
         cur.execute("""
@@ -127,7 +125,7 @@ def alert_engine(cur, conn):
         """, (entry["url"],))
         one_row = cur.fetchone()
         status_code = one_row[0]
-        if average > config["threshold_ms"] or status_code != 200:
+        if average > THRESHOLD_MS or status_code != 200:
             if entry["url"] not in alerted_urls:
                 if status_code == 403:
                     message = f"ALERT: {entry['url']} is rejecting requests -- 403 Forbidden"
@@ -135,30 +133,22 @@ def alert_engine(cur, conn):
                     message = f"ALERT: {entry['url']} is down -- no response | avg response: {round(average, 2)} ms"
                 else:
                     message = f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {round(average, 2)} ms"
-                requests.post(
-                    config["webhook_url"],
-                    json={"content": message}
-                )
+                requests.post(WEBHOOK_URL, json={"content": message})
                 cur.execute("""
                     INSERT INTO alerts
                     (url, status_code, avg_response_ms, message, triggered_at)
                     VALUES (%s, %s, %s, %s, NOW())
-                """, (
-                    entry["url"],
-                    status_code,
-                    average,
-                    message
-                ))
+                """, (entry["url"], status_code, average, message))
                 conn.commit()
                 alerted_urls[entry["url"]] = True
         else:
             if entry["url"] in alerted_urls:
                 alerted_urls.pop(entry["url"])
-        spike_detection(cur, conn, entry["url"], config["webhook_url"])
+        spike_detection(cur, conn, entry["url"])
 
 
 spiked_urls = dict()
-def spike_detection(cur, conn, url, webhook_url):
+def spike_detection(cur, conn, url):
     cur.execute("""
                 SELECT COUNT(*)
                 FROM metrics
@@ -168,20 +158,12 @@ def spike_detection(cur, conn, url, webhook_url):
     spike_count = one_row[0]
     if spike_count >= 10 and url not in spiked_urls:
         message = f"ALERT: {url} is currently having a 404 spike."
-        requests.post(
-            webhook_url,
-            json={"content": message}
-        )
+        requests.post(WEBHOOK_URL, json={"content": message})
         cur.execute("""
             INSERT INTO alerts
             (url, status_code, avg_response_ms, message, triggered_at)
             VALUES (%s, %s, %s, %s, NOW())
-        """, (
-            url,
-            404,
-            None,
-            message
-        ))
+        """, (url, 404, None, message))
         conn.commit()
         spiked_urls[url] = True
     elif spike_count < 10 and url in spiked_urls:
