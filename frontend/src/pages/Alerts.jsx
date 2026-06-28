@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 
 function timeAgo(dateStr) {
   if (!dateStr) return "—"
-  const diff = (Date.now() - new Date(dateStr)) / 1000
+  const diff = Math.max(0, (Date.now() - new Date(dateStr)) / 1000)
   if (diff < 60)  return `${Math.floor(diff)}s ago`
   if (diff < 3600) return `${Math.floor(diff/60)}m ago`
   return `${Math.floor(diff/3600)}h ago`
@@ -74,7 +74,7 @@ export default function Alerts({ token }) {
               <tbody>
                 {[...filtered].reverse().map((alert, i) => (
                   <tr key={i}>
-                    <td className="mono" style={{color:"var(--accent-cyan)"}}>{alert.url}</td>
+                    <td className="mono">{alert.avg_response_ms != null ? `${parseFloat(alert.avg_response_ms).toFixed(2)} ms` : "—"}</td>
                     <td>{statusBadge(alert.status_code)}</td>
                     <td className="mono">{alert.avg_response_ms != null ? `${alert.avg_response_ms} ms` : "—"}</td>
                     <td style={{color:"var(--text-secondary)",fontSize:"13px"}}>{alert.message}</td>
