@@ -129,7 +129,12 @@ def alert_engine(cur, conn):
         status_code = one_row[0]
         if average > config["threshold_ms"] or status_code != 200:
             if entry["url"] not in alerted_urls:
-                message = f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {round(average, 2)} ms"
+                if status_code == 403:
+                    message = f"ALERT: {entry['url']} is rejecting requests -- 403 Forbidden"
+                elif status_code is None:
+                    message = f"ALERT: {entry['url']} is down -- no response | avg response: {round(average, 2)} ms"
+                else:
+                    message = f"ALERT: {entry['url']} is down or slow -- {status_code} | avg response: {round(average, 2)} ms"
                 requests.post(
                     config["webhook_url"],
                     json={"content": message}
