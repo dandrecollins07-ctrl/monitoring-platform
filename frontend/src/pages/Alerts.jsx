@@ -72,7 +72,7 @@ export default function Alerts({ token }) {
                 <tr><th>URL</th><th>Status</th><th>Avg response</th><th>Message</th><th>Triggered</th></tr>
               </thead>
               <tbody>
-                {[...filtered].reverse().map((alert, i) => (
+                {[...filtered].map((alert, i) => (
                   <tr key={i}>
                     <td className="mono" style={{color:"var(--accent-cyan)"}}>{alert.url}</td>
                     <td>{statusBadge(alert.status_code)}</td>
