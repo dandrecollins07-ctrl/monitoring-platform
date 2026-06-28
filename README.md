@@ -60,3 +60,4 @@ Visit http://localhost to view the app.
 * Add lightmode option
 * Status page (public-facing page showing uptime for all monitored services)
 * Multi-user support (invite team members)
+* Categorize 403s separately from actual downtime
