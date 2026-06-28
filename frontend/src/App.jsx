@@ -32,6 +32,10 @@ function Sidebar({ onLogout, isDemo }) {
             <span>{label}</span>
           </NavLink>
         ))}
+        <button className="nav-item" onClick={onLogout} style={{background:"none",border:"none",cursor:"pointer",width:"100%",textAlign:"left",color:"inherit",fontFamily:"inherit",fontSize:"inherit"}}>
+          <span className="nav-icon">⌂</span>
+          <span>Home</span>
+        </button>
       </nav>
       <div className="sidebar-footer">
         <a href="https://www.linkedin.com/in/dandrecollins" target="_blank" rel="noreferrer" className="footer-link">

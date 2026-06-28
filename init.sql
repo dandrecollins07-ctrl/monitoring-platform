@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS server_logs (
     http_version varchar NOT NULL,
     reply_code int NULL,
     byte int NULL
-)
+);
 
 CREATE TABLE IF NOT EXISTS urls (
     id SERIAL PRIMARY KEY,
