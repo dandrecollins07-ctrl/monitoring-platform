@@ -74,9 +74,9 @@ export default function Alerts({ token }) {
               <tbody>
                 {[...filtered].reverse().map((alert, i) => (
                   <tr key={i}>
-                    <td className="mono">{alert.avg_response_ms != null ? `${parseFloat(alert.avg_response_ms).toFixed(2)} ms` : "—"}</td>
+                    <td className="mono" style={{color:"var(--accent-cyan)"}}>{alert.url}</td>
                     <td>{statusBadge(alert.status_code)}</td>
-                    <td className="mono">{alert.avg_response_ms != null ? `${alert.avg_response_ms} ms` : "—"}</td>
+                    <td className="mono">{alert.avg_response_ms != null ? `${parseFloat(alert.avg_response_ms).toFixed(2)} ms` : "—"}</td>
                     <td style={{color:"var(--text-secondary)",fontSize:"13px"}}>{alert.message}</td>
                     <td className="ts">{timeAgo(alert.triggered_at)}</td>
                   </tr>
