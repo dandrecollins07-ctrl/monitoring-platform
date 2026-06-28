@@ -1,18 +1,17 @@
-#need to import the fast API
+import os
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 import psycopg2
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError 
-from auth import (
-    password_verification,
-    token_auth,
-    load_config
-)
+from auth import password_verification, token_auth
 from fastapi import Form
 from pydantic import BaseModel
-import yaml
 
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,49 +23,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-#load the config:
-config = load_config()
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-#Connecting agent to SQL:
 conn = psycopg2.connect(
-    dbname=config["db_name"],
-    user=config["db_user"],
-    password=config["db_password"],
+    dbname=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
     host="db",
 )
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme)
-):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        payload = jwt.decode(
-            token,
-            config["secret_key"],
-            algorithms=[config["algorithm"]]
-        )
-
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         role = payload.get("role")
-
         if username is None or role is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
-
-        return {
-            "username": username,
-            "role": role
-        }
-
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return {"username": username, "role": role}
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
 #RBAC:
 def require_admin(current_user: dict = Depends(get_current_user)):
