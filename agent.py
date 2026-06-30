@@ -129,6 +129,22 @@ def alert_engine(cur, conn):
             if entry["url"] not in alerted_urls:
                 if status_code == 403:
                     message = f"ALERT: {entry['url']} is rejecting requests -- 403 Forbidden"
+                elif status_code == 404:
+                    message = f"ALERT: {entry['url']} is not found."
+                elif status_code == 429:
+                    message = f"ALERT: {entry['url']} has too many requests."
+                elif status_code == 401:
+                    message = f"ALERT: {entry['url']} is unauthorized -- Authentication required."
+                elif status_code == 500:
+                    message = f"ALERT: {entry['url']} has an internal service error."
+                elif status_code == 502:
+                    message = f"ALERT: {entry['url']} has a bad gateway."
+                elif status_code == 503:
+                    message = f"ALERT: {entry['url']} -- Service unavailable."
+                elif status_code == 504:
+                    message = f"ALERT: {entry['url']} -- Gateway timeout."
+                elif status_code == 525:
+                    message = f"ALERT: {entry['url']} -- SSL handshake failed (Cloudflare 525)."
                 elif status_code is None:
                     message = f"ALERT: {entry['url']} is down -- no response | avg response: {round(average, 2)} ms"
                 else:

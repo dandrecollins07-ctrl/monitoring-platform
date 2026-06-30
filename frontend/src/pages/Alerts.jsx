@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 
+const PAGE_SIZE = 20
+
 function timeAgo(dateStr) {
   if (!dateStr) return "—"
   const diff = Math.max(0, (Date.now() - new Date(dateStr)) / 1000)
@@ -20,6 +22,7 @@ export default function Alerts({ token }) {
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState("")
   const [error,   setError]   = useState(null)
+  const [page,    setPage]    = useState(1)
 
   useEffect(() => {
     async function load() {
@@ -33,10 +36,16 @@ export default function Alerts({ token }) {
     load()
   }, [])
 
+  // Reset to page 1 when search changes
+  useEffect(() => { setPage(1) }, [search])
+
   const filtered = alerts.filter(a =>
     a.url?.toLowerCase().includes(search.toLowerCase()) ||
     a.message?.toLowerCase().includes(search.toLowerCase())
   )
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div>
@@ -47,7 +56,7 @@ export default function Alerts({ token }) {
 
       <div className="card">
         <div className="flex-between" style={{marginBottom:"16px"}}>
-          <div className="card-title" style={{margin:0}}>{alerts.length} alerts total</div>
+          <div className="card-title" style={{margin:0}}>{filtered.length} alerts total</div>
           <input className="search-input" placeholder="Search by URL or message…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
 
@@ -66,24 +75,50 @@ export default function Alerts({ token }) {
             <div className="empty-desc">{search ? "Try a different search." : "All systems are operating normally."}</div>
           </div>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>URL</th><th>Status</th><th>Avg response</th><th>Message</th><th>Triggered</th></tr>
-              </thead>
-              <tbody>
-                {[...filtered].map((alert, i) => (
-                  <tr key={i}>
-                    <td className="mono" style={{color:"var(--accent-cyan)"}}>{alert.url}</td>
-                    <td>{statusBadge(alert.status_code)}</td>
-                    <td className="mono">{alert.avg_response_ms != null ? `${parseFloat(alert.avg_response_ms).toFixed(2)} ms` : "—"}</td>
-                    <td style={{color:"var(--text-secondary)",fontSize:"13px"}}>{alert.message}</td>
-                    <td className="ts">{timeAgo(alert.triggered_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>URL</th><th>Status</th><th>Avg response</th><th>Message</th><th>Triggered</th></tr>
+                </thead>
+                <tbody>
+                  {paginated.map((alert, i) => (
+                    <tr key={i}>
+                      <td className="mono" style={{color:"var(--accent-cyan)"}}>{alert.url}</td>
+                      <td>{statusBadge(alert.status_code)}</td>
+                      <td className="mono">{alert.avg_response_ms != null ? `${parseFloat(alert.avg_response_ms).toFixed(2)} ms` : "—"}</td>
+                      <td style={{color:"var(--text-secondary)",fontSize:"13px"}}>{alert.message}</td>
+                      <td className="ts">{timeAgo(alert.triggered_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:"16px"}}>
+                <span style={{color:"var(--text-secondary)", fontSize:"13px"}}>
+                  Page {page} of {totalPages}
+                </span>
+                <div style={{display:"flex", gap:"8px"}}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="btn-secondary"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="btn-secondary"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

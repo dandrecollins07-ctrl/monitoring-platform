@@ -175,7 +175,7 @@ export default function Dashboard({ token }) {
                 <tr><th>URL</th><th>Message</th><th>Triggered</th></tr>
               </thead>
               <tbody>
-                {alerts.slice(-5).reverse().map((a, i) => (
+                {alerts.slice(-5).map((a, i) => (
                   <tr key={i}>
                     <td className="mono" style={{color:"var(--accent-cyan)"}}>{a.url}</td>
                     <td>{a.message}</td>
